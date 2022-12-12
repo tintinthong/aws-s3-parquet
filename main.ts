@@ -2,6 +2,7 @@ import {
   S3Client,
   SelectObjectContentCommand,
   SelectObjectContentCommandInput,
+  SelectObjectContentEventStream,
 } from "@aws-sdk/client-s3";
 const REGION = "us-east-1";
 const s3 = new S3Client({ region: REGION });
@@ -25,15 +26,21 @@ const run = async () => {
     const command = new SelectObjectContentCommand(params);
     const s3Data = await s3.send(command);
 
-    // using 'any' here temporarily, but will need to address type issues
-    const events: any = s3Data.Payload;
+    const metadata = s3Data.$metadata;
+    console.log(metadata);
+    const events: AsyncIterable<SelectObjectContentEventStream> =
+      s3Data.Payload;
     for await (const event of events) {
       try {
         if (event?.Records) {
           if (event?.Records?.Payload) {
-            const record = decodeURIComponent(
-              event.Records.Payload.toString().replace(/\+|\t/g, " ")
+            const record = JSON.parse(
+              Buffer.from(event.Records.Payload).toString("utf8")
             );
+            // console.log(a);
+            // const record = decodeURIComponent(
+            //   event.Records.Payload.toString().replace(/\+|\t/g, " ")
+            // );
             records.push(record);
           } else {
             console.log("skipped event, payload: ", event?.Records?.Payload);
