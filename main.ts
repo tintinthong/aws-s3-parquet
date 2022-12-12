@@ -1,17 +1,21 @@
-import { S3Client, SelectObjectContentCommand, SelectObjectContentCommandInput } from '@aws-sdk/client-s3';
-const REGION = 'us-east-1';
+import {
+  S3Client,
+  SelectObjectContentCommand,
+  SelectObjectContentCommandInput,
+} from "@aws-sdk/client-s3";
+const REGION = "us-east-1";
 const s3 = new S3Client({ region: REGION });
 
 const params: SelectObjectContentCommandInput = {
-  Bucket: 'cardpay-staging-reward-programs',
-  Key: 'rewardProgramID=0x0885ce31D73b63b0Fcb1158bf37eCeaD8Ff0fC72/paymentCycle=27603400/results.parquet',
-  ExpressionType: 'SQL',
-  Expression: 'SELECT * FROM S3Object',
+  Bucket: "cardpay-staging-reward-programs",
+  Key: "rewardProgramID=0x0885ce31D73b63b0Fcb1158bf37eCeaD8Ff0fC72/paymentCycle=27721626/results.parquet",
+  ExpressionType: "SQL",
+  Expression: "SELECT * FROM S3Object",
   InputSerialization: {
     Parquet: {},
   },
   OutputSerialization: {
-    CSV: {},
+    JSON: {},
   },
 };
 
@@ -27,28 +31,30 @@ const run = async () => {
       try {
         if (event?.Records) {
           if (event?.Records?.Payload) {
-            const record = decodeURIComponent(event.Records.Payload.toString().replace(/\+|\t/g, ' '));
+            const record = decodeURIComponent(
+              event.Records.Payload.toString().replace(/\+|\t/g, " ")
+            );
             records.push(record);
           } else {
-            console.log('skipped event, payload: ', event?.Records?.Payload);
+            console.log("skipped event, payload: ", event?.Records?.Payload);
           }
         } else if (event.Stats) {
           console.log(`Processed ${event.Stats.Details.BytesProcessed} bytes`);
         } else if (event.End) {
-          console.log('SelectObjectContent completed');
+          console.log("SelectObjectContent completed");
         }
       } catch (err) {
         if (err instanceof TypeError) {
-          console.log('error in events: ', err);
+          console.log("error in events: ", err);
           throw err;
         }
       }
     }
   } catch (err) {
-    console.log('error fetching data: ', err);
+    console.log("error fetching data: ", err);
     throw err;
   }
-  console.log('final records: ', records);
+  console.log("final records: ", records);
   return records;
 };
 
